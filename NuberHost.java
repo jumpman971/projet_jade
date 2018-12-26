@@ -102,6 +102,7 @@ public class NuberHost
     public final static String CLIENT = "CLIENT";
 	public final static String GOODBYE = "GOODBYE";
     public final static String TAXI = "TAXI";
+	public final static String SERVICE_CLIENT = "SERVICE CLIENT";
 	
     // Static variables
     //////////////////////////////////

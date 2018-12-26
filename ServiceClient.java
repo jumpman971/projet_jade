@@ -37,11 +37,68 @@ public class ServiceClient extends Agent {
 
   // Put agent initializations here
 	protected void setup() {	
-	
+		try {
+            // create the agent descrption of itself
+            ServiceDescription sd = new ServiceDescription();
+            sd.setType( "NuberServiceClient" );
+            sd.setName( "ServiceClientServiceDescription" );
+            DFAgentDescription dfd = new DFAgentDescription();
+            dfd.setName( getAID() );
+            dfd.addServices( sd );
+
+            // register the description with the DF
+            DFService.register( this, dfd );
+
+            // notify the host that we have arrived
+            ACLMessage hello = new ACLMessage( ACLMessage.INFORM );
+            hello.setContent( NuberHost.SERVICE_CLIENT);
+            hello.addReceiver( new AID( "host", AID.ISLOCALNAME ) );
+            send( hello );
+
+            // add a Behaviour to process incoming messages
+            addBehaviour( new CyclicBehaviour( this ) {
+                            public void action() {
+                                // listen if a greetings message arrives
+                                ACLMessage msg = receive( MessageTemplate.MatchPerformative( ACLMessage.INFORM ) );
+
+                                if (msg != null) {
+                                    if (NuberHost.GOODBYE.equals( msg.getContent() )) {
+                                        // time to go
+                                        leaveParty();
+                                    } else {
+                                        System.out.println( "ServiceClient received unexpected message: " + msg );
+                                    }
+                                }
+                                else {
+                                    // if no message is arrived, block the behaviour
+                                    block();
+                                }
+                            }
+                        } );
+        }
+        catch (Exception e) {
+            System.out.println( "Saw exception in ServiceClientAgent: " + e );
+            e.printStackTrace();
+        }
 	}
 
 	// Put agent clean-up operations here
 	protected void takeDown() {
 
 	}
+	
+	/**
+     * To leave the party, we deregister with the DF and delete the agent from
+     * the platform.
+     */
+    protected void leaveParty() {
+        try {
+            DFService.deregister( this );
+            doDelete();
+        }
+        catch (FIPAException e) {
+            System.err.println( "Saw FIPAException while leaving party: " + e );
+            e.printStackTrace();
+        }
+    }
 }
