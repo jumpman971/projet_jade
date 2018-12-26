@@ -34,7 +34,10 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 public class Client extends Agent {
-
+	public final static int MAX_WAIT_TIME = 60;
+	
+	public boolean waitingForResponse = false;
+	
   // Put agent initializations here
 	protected void setup() {	
 		try {
@@ -54,7 +57,7 @@ public class Client extends Agent {
             hello.setContent( NuberHost.CLIENT);
             hello.addReceiver( new AID( "host", AID.ISLOCALNAME ) );
             send( hello );
-
+			
             // add a Behaviour to process incoming messages
             addBehaviour( new CyclicBehaviour( this ) {
                             public void action() {
@@ -73,6 +76,32 @@ public class Client extends Agent {
                                     // if no message is arrived, block the behaviour
                                     block();
                                 }
+                            }
+                        } );
+						
+			// add a Behaviour for outgoing messages
+            addBehaviour( new CyclicBehaviour( this ) {
+                            public void action() {
+								if (waitingForResponse)
+									block();
+								
+								int waitTime = (int) (Math.random() * MAX_WAIT_TIME);
+								waitTime *= 1000;
+								
+								try {
+									Thread.sleep(waitTime);
+								} catch(InterruptedException ex) {
+									Thread.currentThread().interrupt();
+								}
+								
+								ACLMessage msg = new ACLMessage( ACLMessage.INFORM );
+								msg.setContent( NuberHost.NEED_A_TAXI );
+
+								msg.addReceiver( new AID("serviceClient", AID.ISLOCALNAME) );
+
+								send(msg);
+								
+								waitingForResponse = true;
                             }
                         } );
         }

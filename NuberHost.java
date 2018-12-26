@@ -100,9 +100,13 @@ public class NuberHost
     //////////////////////////////////
 
     public final static String CLIENT = "CLIENT";
-	public final static String GOODBYE = "GOODBYE";
+	public final static String NEED_A_TAXI = "NEED A TAXI";
+	
     public final static String TAXI = "TAXI";
+	
 	public final static String SERVICE_CLIENT = "SERVICE CLIENT";
+	
+	public final static String GOODBYE = "GOODBYE";
 	
     // Static variables
     //////////////////////////////////
@@ -203,9 +207,6 @@ public class NuberHost
 		
 		PlatformController container = getContainerController(); // get a container controller for creating new agents
 		
-		inviteClients(nClients, container);
-		inviteTaxis(nTaxis, container);
-		
 		try {
 			String localName = "serviceClient";
 			AgentController serviceClient = container.createNewAgent(localName, "projet_jade.ServiceClient", null);
@@ -216,6 +217,9 @@ public class NuberHost
             System.err.println( "Exception while adding serviceClients: " + e );
             e.printStackTrace();
         }
+		
+		inviteClients(nClients, container);
+		inviteTaxis(nTaxis, container);
 	}
 	
     /**

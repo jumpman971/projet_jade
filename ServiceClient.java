@@ -65,7 +65,9 @@ public class ServiceClient extends Agent {
                                     if (NuberHost.GOODBYE.equals( msg.getContent() )) {
                                         // time to go
                                         leaveParty();
-                                    } else {
+                                    } else if (NuberHost.NEED_A_TAXI.equals( msg.getContent())) {
+										System.out.println("someone need a taxi...");
+									} else {
                                         System.out.println( "ServiceClient received unexpected message: " + msg );
                                     }
                                 }
