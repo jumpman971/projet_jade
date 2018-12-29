@@ -34,6 +34,13 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 public class Taxi extends Agent {
+	public final static int MAX_WORKING_DISTANCE = 50;
+	
+	/*private int posX;
+	private int posY;*/
+	private Position currPos;
+	private boolean isAvailable = true;
+	private int workingArea;
 
   // Put agent initializations here
 	protected void setup() {	
@@ -54,6 +61,9 @@ public class Taxi extends Agent {
             hello.setContent( NuberHost.TAXI);
             hello.addReceiver( new AID( "host", AID.ISLOCALNAME ) );
             send( hello );
+			
+			currPos = new Position(Math.random() * NuberHost.MAX_X_MAP_AREA, Math.random() * NuberHost.MAX_Y_MAP_AREA);
+			workingArea = Math.random() * MAX_WORKING_DISTANCE;
 
             // add a Behaviour to process incoming messages
             addBehaviour( new CyclicBehaviour( this ) {

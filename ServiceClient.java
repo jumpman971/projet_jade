@@ -67,6 +67,14 @@ public class ServiceClient extends Agent {
                                         leaveParty();
                                     } else if (NuberHost.NEED_A_TAXI.equals( msg.getContent())) {
 										System.out.println("someone need a taxi...");
+										Position clientPos = ???;
+										
+										for (int i = 0; i < "list_taxi"; ++i) {	
+										thisTaxi = ???;
+											if (isPositionInTaxiArea(clientPos, thisTaxi)) {
+												sendMessageToTaxi
+											}
+										}
 									} else {
                                         System.out.println( "ServiceClient received unexpected message: " + msg );
                                     }
@@ -103,4 +111,9 @@ public class ServiceClient extends Agent {
             e.printStackTrace();
         }
     }
+	
+	protected boolean isPositionInTaxiArea(Position pos, Taxi aTaxi) {
+		//if ()
+		return true;
+	}
 }

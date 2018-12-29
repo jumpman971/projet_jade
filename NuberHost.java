@@ -99,7 +99,12 @@ public class NuberHost
 	// Constants
     //////////////////////////////////
 
-    public final static String CLIENT = "CLIENT";
+    
+	
+    // Static variables
+    //////////////////////////////////
+	
+	public final static String CLIENT = "CLIENT";
 	public final static String NEED_A_TAXI = "NEED A TAXI";
 	
     public final static String TAXI = "TAXI";
@@ -108,9 +113,8 @@ public class NuberHost
 	
 	public final static String GOODBYE = "GOODBYE";
 	
-    // Static variables
-    //////////////////////////////////
-
+	public final static int MAX_X_MAP_AREA = 80;
+	public final static int MAX_Y_MAP_AREA = 80;
 
     // Instance variables
     //////////////////////////////////
@@ -239,9 +243,9 @@ public class NuberHost
         try {
             for (int i = 0;  i < nClients;  i++) {
                 // create a new agent
-		String localName = "client_"+i;
-		AgentController client = container.createNewAgent(localName, "projet_jade.Client", null);
-		client.start();
+				String localName = "client_"+i;
+				AgentController client = container.createNewAgent(localName, "projet_jade.Client", null);
+				client.start();
                 //Agent guest = new GuestAgent();
                 //guest.doStart( "guest_" + i );
 

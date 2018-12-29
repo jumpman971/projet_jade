@@ -36,7 +36,15 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 public class Client extends Agent {
 	public final static int MAX_WAIT_TIME = 60;
 	
-	public boolean waitingForResponse = false;
+	/*private int posX;
+	private int posY;
+	private int destPosX;
+	private int destPosY;*/
+	private Position currPos;
+	private Position destPos;
+	private ArrayList<HashMap> myTaxis;
+	
+	private boolean waitingForResponse = false;
 	
   // Put agent initializations here
 	protected void setup() {	
