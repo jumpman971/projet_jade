@@ -24,6 +24,11 @@ Boston, MA  02111-1307, USA.
 package projet_jade;
 
 import jade.core.Agent;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import jade.core.AID;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
@@ -103,7 +108,16 @@ public class Client extends Agent {
 								}
 								
 								ACLMessage msg = new ACLMessage( ACLMessage.INFORM );
-								msg.setContent( NuberHost.NEED_A_TAXI );
+								HashMap content = new HashMap();
+								content.put("message", NuberHost.NEED_A_TAXI);
+								content.put("position", currPos);
+								content.put("destination", destPos);
+								try {
+									msg.setContentObject(content);
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
 
 								msg.addReceiver( new AID("serviceClient", AID.ISLOCALNAME) );
 

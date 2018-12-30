@@ -24,6 +24,10 @@ Boston, MA  02111-1307, USA.
 package projet_jade;
 
 import jade.core.Agent;
+
+import java.io.Serializable;
+import java.util.HashMap;
+
 import jade.core.AID;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
@@ -60,11 +64,22 @@ public class Taxi extends Agent {
             ACLMessage hello = new ACLMessage( ACLMessage.INFORM );
             hello.setContent( NuberHost.TAXI);
             hello.addReceiver( new AID( "host", AID.ISLOCALNAME ) );
-            send( hello );
+            send( hello );            
 			
 			currPos = new Position(Math.random() * NuberHost.MAX_X_MAP_AREA, Math.random() * NuberHost.MAX_Y_MAP_AREA);
-			workingArea = Math.random() * MAX_WORKING_DISTANCE;
-
+			workingArea = (int) (Math.random() * MAX_WORKING_DISTANCE);
+			
+			hello = new ACLMessage( ACLMessage.INFORM );
+            hello.addReceiver( new AID( "serviceClient", AID.ISLOCALNAME ) );
+			//send hello to service client to be registred
+			HashMap content = new HashMap();
+			content.put("message", NuberHost.REGISTER_TAXI);
+			content.put("position", currPos);
+			content.put("workingArea", workingArea);
+			content.put("isAvailable", isAvailable);
+			hello.setContentObject(content);
+            send( hello );
+			
             // add a Behaviour to process incoming messages
             addBehaviour( new CyclicBehaviour( this ) {
                             public void action() {

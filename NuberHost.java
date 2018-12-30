@@ -106,8 +106,10 @@ public class NuberHost
 	
 	public final static String CLIENT = "CLIENT";
 	public final static String NEED_A_TAXI = "NEED A TAXI";
+	public final static String GIVE_YOUR_POS = "GIVE ME YOUR POSITION";
 	
     public final static String TAXI = "TAXI";
+    public final static String REGISTER_TAXI = "REGISTER TAXI";
 	
 	public final static String SERVICE_CLIENT = "SERVICE CLIENT";
 	

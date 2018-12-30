@@ -24,18 +24,24 @@ Boston, MA  02111-1307, USA.
 package projet_jade;
 
 import jade.core.Agent;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import jade.core.AID;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 public class ServiceClient extends Agent {
-
-  // Put agent initializations here
+	private HashMap listTaxi; //la clé est l'id du taxi et le contenu est un hashmap avec ses infos
+	
+	// Put agent initializations here
 	protected void setup() {	
 		try {
             // create the agent descrption of itself
@@ -54,6 +60,8 @@ public class ServiceClient extends Agent {
             hello.setContent( NuberHost.SERVICE_CLIENT);
             hello.addReceiver( new AID( "host", AID.ISLOCALNAME ) );
             send( hello );
+            
+            listTaxi = new HashMap();
 
             // add a Behaviour to process incoming messages
             addBehaviour( new CyclicBehaviour( this ) {
@@ -65,18 +73,40 @@ public class ServiceClient extends Agent {
                                     if (NuberHost.GOODBYE.equals( msg.getContent() )) {
                                         // time to go
                                         leaveParty();
-                                    } else if (NuberHost.NEED_A_TAXI.equals( msg.getContent())) {
-										System.out.println("someone need a taxi...");
-										Position clientPos = ???;
-										
-										for (int i = 0; i < "list_taxi"; ++i) {	
-										thisTaxi = ???;
-											if (isPositionInTaxiArea(clientPos, thisTaxi)) {
-												sendMessageToTaxi
-											}
+                                    } else { //possible message with object content (cant use setcontent and setcontentobject in the same time
+                                    	HashMap content = null;
+										try {
+											content = (HashMap) msg.getContentObject();
+										} catch (UnreadableException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
 										}
-									} else {
-                                        System.out.println( "ServiceClient received unexpected message: " + msg );
+										String message = (String) content.get("message");
+										
+                                    	if (NuberHost.REGISTER_TAXI.equals(message)) {
+                                        	System.out.println("new taxi registred in serviceClient!");
+    										
+    										listTaxi.put(msg.getSender(), content);
+    									} else if (NuberHost.NEED_A_TAXI.equals(message)) {
+    										System.out.println("someone need a taxi...");
+    										
+    										Position clientPos = (Position) content.get("position");
+    										Position clientDestPos = (Position) content.get("destination"); 
+    										
+    										for (int i = 0; i < listTaxi.size(); ++i) {	
+    											//thisTaxi = ???;
+    											//if (isPositionInTaxiArea(clientPos, thisTaxi))
+    												//sendMessageToTaxi
+    										}
+    									} else {
+	                                    	System.out.println( "ServiceClient received unexpected message: " + msg );
+	                                    	try {
+												System.out.println(msg.getContentObject());
+											} catch (UnreadableException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+    									}
                                     }
                                 }
                                 else {

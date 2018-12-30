@@ -23,7 +23,9 @@ Boston, MA  02111-1307, USA.
 
 package projet_jade;
 
-public class Position {
+import java.io.Serializable;
+
+public class Position implements Serializable {
 	private int x;
 	private int y;
 	
@@ -35,6 +37,11 @@ public class Position {
 	public Position(int x, int y) {
 		x = x;
 		y = y;
+	}
+	
+	public Position(double x, double y) {
+		x = (int) x;
+		y = (int) y;
 	}
 	
 	public int getX() {
