@@ -25,8 +25,10 @@ package projet_jade;
 
 import jade.core.Agent;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import jade.core.AID;
 import jade.core.behaviours.*;
@@ -81,22 +83,56 @@ public class ServiceClient extends Agent {
 											// TODO Auto-generated catch block
 											e.printStackTrace();
 										}
-										String message = (String) content.get("message");
+										String message = "";
+										if (content != null)
+											message = (String) content.get("message");
 										
-                                    	if (NuberHost.REGISTER_TAXI.equals(message)) {
-                                        	System.out.println("new taxi registred in serviceClient!");
-    										
+                                    	if (NuberHost.REGISTER_TAXI.equals(message)) {    
+                                    		content.remove("message");
     										listTaxi.put(msg.getSender(), content);
+    										System.out.println("New taxi registred in serviceClient!"
+    												+ "(" + msg.getSender().getName() + ")");
+    												//+ "(" + content + ")");
+    										
     									} else if (NuberHost.NEED_A_TAXI.equals(message)) {
-    										System.out.println("someone need a taxi...");
+    										System.out.println("Someone need a taxi...");
     										
     										Position clientPos = (Position) content.get("position");
     										Position clientDestPos = (Position) content.get("destination"); 
     										
-    										for (int i = 0; i < listTaxi.size(); ++i) {	
-    											//thisTaxi = ???;
-    											//if (isPositionInTaxiArea(clientPos, thisTaxi))
-    												//sendMessageToTaxi
+    										for (Iterator i = listTaxi.values().iterator(); i.hasNext();) {
+    											HashMap thisTaxi = (HashMap) i.next();
+    											
+    											if ((Boolean) thisTaxi.get("isAvailable")) {
+    												Position pos = (Position) thisTaxi.get("position");
+    												//System.out.println(thisTaxi);
+        											int area = (int) thisTaxi.get("workingArea");
+        											if (isPos1InAreaOfPos2(clientPos, pos, area)) {
+        												//System.out.println("this taxi is available");
+        												ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
+        												//on envoie pas le message direct au client
+        												/*HashMap repContent = new HashMap();
+        												repContent.put("message", NuberHost.CHOOSE_A_TAXI);
+        												repContent.put("id", thisTaxi.get("id"));
+        									            try {
+															rep.setContentObject(repContent);
+														} catch (IOException e) {
+															// TODO Auto-generated catch block
+															e.printStackTrace();
+														} 
+        									            rep.addReceiver(msg.getSender());*/
+        												content.put("message", NuberHost.NEED_A_TAXI);
+        												content.put("id", msg.getSender());
+        												try {
+															rep.setContentObject(content);
+														} catch (IOException e) {
+															// TODO Auto-generated catch block
+															e.printStackTrace();
+														} 
+        												rep.addReceiver((AID) thisTaxi.get("id"));
+        									            send(rep);
+        											}
+    											}
     										}
     									} else {
 	                                    	System.out.println( "ServiceClient received unexpected message: " + msg );
@@ -142,8 +178,13 @@ public class ServiceClient extends Agent {
         }
     }
 	
-	protected boolean isPositionInTaxiArea(Position pos, Taxi aTaxi) {
-		//if ()
-		return true;
+	protected boolean isPos1InAreaOfPos2(Position pos1, Position pos2, int area) {
+		double calc1 = Math.pow((pos1.getX() - pos2.getX()), 2);
+		double calc2 = Math.pow((pos1.getY() - pos2.getY()), 2);
+		
+		if (calc1 + calc2 < Math.pow(area, 2))
+			return true;
+		
+		return false;
 	}
 }

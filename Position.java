@@ -35,13 +35,13 @@ public class Position implements Serializable {
 	}
 	
 	public Position(int x, int y) {
-		x = x;
-		y = y;
+		this.x = x;
+		this.y = y;
 	}
 	
 	public Position(double x, double y) {
-		x = (int) x;
-		y = (int) y;
+		this.x = (int) x;
+		this.y = (int) y;
 	}
 	
 	public int getX() {
@@ -50,5 +50,10 @@ public class Position implements Serializable {
 	
 	public int getY() {
 		return y;
+	}
+
+	@Override
+	public String toString() {
+		return "[x=" + x + ", y=" + y + "]";
 	}
 }

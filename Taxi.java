@@ -25,26 +25,33 @@ package projet_jade;
 
 import jade.core.Agent;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Timer;
 
 import jade.core.AID;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 public class Taxi extends Agent {
+	public final static int MIN_WORKING_DISTANCE = 10;
 	public final static int MAX_WORKING_DISTANCE = 50;
+	public final static int MAX_WAIT_BEFORE_MOVING = 20;
 	
 	/*private int posX;
 	private int posY;*/
 	private Position currPos;
 	private boolean isAvailable = true;
 	private int workingArea;
+	
+	private Timer movingTimer; //timer avant que le taxi ne bouge dans une nouvelle location
 
   // Put agent initializations here
 	protected void setup() {	
@@ -66,13 +73,14 @@ public class Taxi extends Agent {
             hello.addReceiver( new AID( "host", AID.ISLOCALNAME ) );
             send( hello );            
 			
-			currPos = new Position(Math.random() * NuberHost.MAX_X_MAP_AREA, Math.random() * NuberHost.MAX_Y_MAP_AREA);
-			workingArea = (int) (Math.random() * MAX_WORKING_DISTANCE);
+			currPos = NuberHost.getRandomPosition();
+			workingArea = (int) (Math.random() * (MAX_WORKING_DISTANCE - MIN_WORKING_DISTANCE));
 			
 			hello = new ACLMessage( ACLMessage.INFORM );
             hello.addReceiver( new AID( "serviceClient", AID.ISLOCALNAME ) );
 			//send hello to service client to be registred
 			HashMap content = new HashMap();
+			content.put("id", getAID());
 			content.put("message", NuberHost.REGISTER_TAXI);
 			content.put("position", currPos);
 			content.put("workingArea", workingArea);
@@ -85,13 +93,38 @@ public class Taxi extends Agent {
                             public void action() {
                                 // listen if a greetings message arrives
                                 ACLMessage msg = receive( MessageTemplate.MatchPerformative( ACLMessage.INFORM ) );
-
+                                
                                 if (msg != null) {
-                                    if (NuberHost.GOODBYE.equals( msg.getContent() )) {
+                                    if (NuberHost.GOODBYE.equals(msg.getContent())) {
                                         // time to go
                                         leaveParty();
-                                    } else {
-                                        System.out.println( "Taxi received unexpected message: " + msg );
+                                    } else if (NuberHost.I_DONT_CHOOSE_YOU.equals(msg.getContent())) {
+										System.out.println(msg.getSender().getName() + " didn't choose me");
+									} else {
+                                    	HashMap content = null;
+										try {
+											content = (HashMap) msg.getContentObject();
+										} catch (UnreadableException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										}
+										String message = "";
+										if (content != null)
+											message = (String) content.get("message");
+										
+                                    	if (NuberHost.NEED_A_TAXI.equals(message)) {   
+                                    		imAvailable(content);
+    									} else if (NuberHost.I_CHOOSE_YOU.equals(message)) {
+    										System.out.println(msg.getSender().getName() + " have choose me");
+    										if (isAvailable) {
+    											//On accepte la course et on démarre un timer qui correspond au temps de trajet
+    										} else {
+    											//on renvoie un message au client que l'on est plus dispo
+    										}
+    											
+    									} else {
+    										System.out.println( "Taxi received unexpected message: " + msg );
+    									}                                        
                                     }
                                 }
                                 else {
@@ -113,8 +146,32 @@ public class Taxi extends Agent {
 	}
 	
 	// Internal implementation methods
-    //////////////////////////////////
-
+    //////////////////////////////////s
+	
+	private void imAvailable(HashMap content) {
+		ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
+		HashMap repContent = new HashMap();
+		AID id = (AID) content.get("id");
+		System.out.print("( "+ getAID().getName() +" ) Hey " + id.getName() + ", ");
+		if (isAvailable) {
+			System.out.println("i'm available!");
+			repContent.put("message", NuberHost.IM_AVAILABLE);
+		} else {
+			System.out.println("i'm not available!");
+			repContent.put("message", NuberHost.IM_NOT_AVAILABLE);
+		}
+		repContent.put("id", getAID());
+        try {
+			rep.setContentObject(repContent);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+        System.out.println("1");
+        rep.addReceiver(id);
+        send(rep);
+	}
+	
     /**
      * To leave the party, we deregister with the DF and delete the agent from
      * the platform.

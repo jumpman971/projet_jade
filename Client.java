@@ -28,11 +28,14 @@ import jade.core.Agent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import jade.core.AID;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -40,16 +43,17 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 public class Client extends Agent {
 	public final static int MAX_WAIT_TIME = 60;
-	
-	/*private int posX;
-	private int posY;
-	private int destPosX;
-	private int destPosY;*/
+	public final static int MAX_WAIT_FOR_TAXI = 15;
+
 	private Position currPos;
 	private Position destPos;
-	private ArrayList<HashMap> myTaxis;
+	private HashMap myTaxis;
 	
 	private boolean waitingForResponse = false;
+	private boolean waitingForTaxi = false;
+	private Timer timer;
+	private ArrayList<HashMap> tmpTaxi; //liste de taxi à choisir lors d'une demande de taxi
+	private boolean oneTaxiIsInMyList = false; //utile lorsque l'on choisie un taxi (voir le code)
 	
   // Put agent initializations here
 	protected void setup() {	
@@ -70,6 +74,10 @@ public class Client extends Agent {
             hello.setContent( NuberHost.CLIENT);
             hello.addReceiver( new AID( "host", AID.ISLOCALNAME ) );
             send( hello );
+            
+            myTaxis = new HashMap();
+            currPos = NuberHost.getRandomPosition();
+            timer = null;
 			
             // add a Behaviour to process incoming messages
             addBehaviour( new CyclicBehaviour( this ) {
@@ -78,14 +86,37 @@ public class Client extends Agent {
                                 ACLMessage msg = receive( MessageTemplate.MatchPerformative( ACLMessage.INFORM ) );
 
                                 if (msg != null) {
+                                	//System.out.println(msg.getSender().getName() + " got a message");
                                     if (NuberHost.GOODBYE.equals( msg.getContent() )) {
                                         // time to go
                                         leaveParty();
                                     } else {
-                                        System.out.println( "Client received unexpected message: " + msg );
+                                    	HashMap content = null;
+										try {
+											content = (HashMap) msg.getContentObject();
+										} catch (UnreadableException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										}
+										String message = "";
+										if (content != null)
+											message = (String) content.get("message");
+										
+                                    	if (NuberHost.IM_AVAILABLE.equals(message)) {
+                                    		if (waitingForResponse) {
+                                    			waitingForResponse = false;
+                                    			waitingForTaxi = true;
+                                    			timer.cancel();
+                                    			timer.purge();
+                                    			timer = null;
+                                    		}
+                                    		
+                                    		chooseATaxi(content);
+    									} else {
+    										System.out.println( "Client received unexpected message: " + msg );
+    									}
                                     }
-                                }
-                                else {
+                                } else {
                                     // if no message is arrived, block the behaviour
                                     block();
                                 }
@@ -95,10 +126,10 @@ public class Client extends Agent {
 			// add a Behaviour for outgoing messages
             addBehaviour( new CyclicBehaviour( this ) {
                             public void action() {
-								if (waitingForResponse)
+								if (waitingForResponse || waitingForTaxi)
 									block();
 								
-								int waitTime = (int) (Math.random() * MAX_WAIT_TIME);
+								int waitTime = (int) (Math.random() * (MAX_WAIT_TIME - 1));
 								waitTime *= 1000;
 								
 								try {
@@ -107,23 +138,17 @@ public class Client extends Agent {
 									Thread.currentThread().interrupt();
 								}
 								
-								ACLMessage msg = new ACLMessage( ACLMessage.INFORM );
-								HashMap content = new HashMap();
-								content.put("message", NuberHost.NEED_A_TAXI);
-								content.put("position", currPos);
-								content.put("destination", destPos);
-								try {
-									msg.setContentObject(content);
-								} catch (IOException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-
-								msg.addReceiver( new AID("serviceClient", AID.ISLOCALNAME) );
-
-								send(msg);
+								iNeedATaxi();
 								
 								waitingForResponse = true;
+								timer = new Timer();
+								timer.schedule(new TimerTask() {
+									@Override
+									public void run() {
+										waitingForResponse = false;
+										waitingForTaxi = false;
+									}
+								}, MAX_WAIT_FOR_TAXI * 1000);
                             }
                         } );
         }
@@ -140,7 +165,90 @@ public class Client extends Agent {
 	
 	// Internal implementation methods
     //////////////////////////////////
+	
+	private void iNeedATaxi() {
+		destPos = NuberHost.getRandomPosition();
+		
+		ACLMessage msg = new ACLMessage( ACLMessage.INFORM );
+		HashMap content = new HashMap();
+		content.put("message", NuberHost.NEED_A_TAXI);
+		content.put("position", currPos);
+		content.put("destination", destPos);
+		try {
+			msg.setContentObject(content);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
+		msg.addReceiver( new AID("serviceClient", AID.ISLOCALNAME) );
+
+		send(msg);
+	}
+	
+	private void chooseATaxi(HashMap content) {
+		if (timer == null) { //Démarrer compteur pour le choix de taxi dispo
+			timer = new Timer();
+			timer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					//System.out.println("test");
+					//on choisie un taxi parmi la liste
+					HashMap choosenTaxi = null;
+					if (myTaxis.isEmpty() || !oneTaxiIsInMyList) {//si on a jamais prix de taxi ou qu'aucun de ceux dispo est dans ma liste
+						int index = (int) (Math.random() * tmpTaxi.size());
+						choosenTaxi = tmpTaxi.get(index);
+						tmpTaxi.remove(index);
+					} else { //on choisi le taxi qui a le plus de score parmi la liste
+						
+					}
+					
+					if (choosenTaxi == null) {//si aucun taxi n'a pu être choisi???
+					
+					}
+					//on envoi un message pour confirmer le choix de taxi mais on attend que le service client nous confirme que c'est bon
+					ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
+					HashMap content = new HashMap();
+					content.put("message", NuberHost.I_CHOOSE_YOU);
+					content.put("position", currPos);
+					content.put("destination", destPos);
+					try {
+						rep.setContentObject(content);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		            rep.addReceiver((AID) choosenTaxi.get("id"));
+		            send(rep);
+		            
+		            //on envoie des messages au autre taxi pour leur dire qu'on les as pas choisies
+		            for (int i = 0; i < tmpTaxi.size(); ++i) {
+		            	rep = new ACLMessage( ACLMessage.INFORM );
+			            rep.setContent(NuberHost.I_DONT_CHOOSE_YOU);
+			            rep.addReceiver((AID) ((HashMap) tmpTaxi.get(i)).get("id"));
+			            send(rep);
+		            }
+				}
+			}, MAX_WAIT_FOR_TAXI * 1000);
+			
+			tmpTaxi = new ArrayList();
+		}
+		//System.out.println("test2");
+		HashMap tmp;
+		AID taxiId = (AID) content.get("id");
+		tmp = (HashMap) myTaxis.get(taxiId);
+		if (tmp == null) {
+			tmp = new HashMap();
+			tmp.put("id", taxiId);
+			tmp.put("score", null);
+		} else
+			oneTaxiIsInMyList = true; //ne pas oublié de réinit la var au bon moment
+			
+		tmpTaxi.add(tmp);
+		//System.out.println(tmp);
+		//System.out.println("test3");
+	}
+	
     /**
      * To leave the party, we deregister with the DF and delete the agent from
      * the platform.

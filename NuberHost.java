@@ -105,13 +105,18 @@ public class NuberHost
     //////////////////////////////////
 	
 	public final static String CLIENT = "CLIENT";
-	public final static String NEED_A_TAXI = "NEED A TAXI";
-	public final static String GIVE_YOUR_POS = "GIVE ME YOUR POSITION";
+	//public final static String GIVE_YOUR_POS = "GIVE ME YOUR POSITION";
+	//public final static String CHOOSE_A_TAXI = "CHOOSE A TAXI";
+	public final static String I_CHOOSE_YOU = "I CHOOSE YOU";
+	public final static String I_DONT_CHOOSE_YOU = "I DONT CHOOSE YOU";
 	
     public final static String TAXI = "TAXI";
     public final static String REGISTER_TAXI = "REGISTER TAXI";
+    public final static String IM_AVAILABLE = "HEY I'M AVAILABLE";
+    public final static String IM_NOT_AVAILABLE = "HEY SORRY I'M NOT AVAILABLE";
 	
 	public final static String SERVICE_CLIENT = "SERVICE CLIENT";
+	public final static String NEED_A_TAXI = "NEED A TAXI";
 	
 	public final static String GOODBYE = "GOODBYE";
 	
@@ -291,6 +296,10 @@ public class NuberHost
             System.err.println( "Exception while adding taxis: " + e );
             e.printStackTrace();
         }
+    }
+    
+    protected static Position getRandomPosition() {
+		return new Position(Math.random() * NuberHost.MAX_X_MAP_AREA, Math.random() * NuberHost.MAX_Y_MAP_AREA);
     }
 
 	/**
