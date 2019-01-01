@@ -75,7 +75,9 @@ public class ServiceClient extends Agent {
                                     if (NuberHost.GOODBYE.equals( msg.getContent() )) {
                                         // time to go
                                         leaveParty();
-                                    } else { //possible message with object content (cant use setcontent and setcontentobject in the same time
+                                    } else if (NuberHost.IM_NOT_AVAILABLE.equals(msg.getContent())) { 
+                                    	((HashMap) listTaxi.get(msg.getSender())).put("isAvailable", false);
+                                	} else { //possible message with object content (cant use setcontent and setcontentobject in the same time
                                     	HashMap content = null;
 										try {
 											content = (HashMap) msg.getContentObject();
@@ -95,45 +97,7 @@ public class ServiceClient extends Agent {
     												//+ "(" + content + ")");
     										
     									} else if (NuberHost.NEED_A_TAXI.equals(message)) {
-    										System.out.println("Someone need a taxi...");
-    										
-    										Position clientPos = (Position) content.get("position");
-    										Position clientDestPos = (Position) content.get("destination"); 
-    										
-    										for (Iterator i = listTaxi.values().iterator(); i.hasNext();) {
-    											HashMap thisTaxi = (HashMap) i.next();
-    											
-    											if ((Boolean) thisTaxi.get("isAvailable")) {
-    												Position pos = (Position) thisTaxi.get("position");
-    												//System.out.println(thisTaxi);
-        											int area = (int) thisTaxi.get("workingArea");
-        											if (isPos1InAreaOfPos2(clientPos, pos, area)) {
-        												//System.out.println("this taxi is available");
-        												ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
-        												//on envoie pas le message direct au client
-        												/*HashMap repContent = new HashMap();
-        												repContent.put("message", NuberHost.CHOOSE_A_TAXI);
-        												repContent.put("id", thisTaxi.get("id"));
-        									            try {
-															rep.setContentObject(repContent);
-														} catch (IOException e) {
-															// TODO Auto-generated catch block
-															e.printStackTrace();
-														} 
-        									            rep.addReceiver(msg.getSender());*/
-        												content.put("message", NuberHost.NEED_A_TAXI);
-        												content.put("id", msg.getSender());
-        												try {
-															rep.setContentObject(content);
-														} catch (IOException e) {
-															// TODO Auto-generated catch block
-															e.printStackTrace();
-														} 
-        												rep.addReceiver((AID) thisTaxi.get("id"));
-        									            send(rep);
-        											}
-    											}
-    										}
+    										aClientNeedATaxi(msg, content);
     									} else {
 	                                    	System.out.println( "ServiceClient received unexpected message: " + msg );
 	                                    	try {
@@ -176,6 +140,38 @@ public class ServiceClient extends Agent {
             System.err.println( "Saw FIPAException while leaving party: " + e );
             e.printStackTrace();
         }
+    }
+    
+    private void aClientNeedATaxi(ACLMessage msg, HashMap content) {
+    	System.out.println("Someone need a taxi...");
+		
+		Position clientPos = (Position) content.get("position");
+		Position clientDestPos = (Position) content.get("destination"); 
+		
+		for (Iterator i = listTaxi.values().iterator(); i.hasNext();) {
+			HashMap thisTaxi = (HashMap) i.next();
+			
+			if ((Boolean) thisTaxi.get("isAvailable")) {
+				Position pos = (Position) thisTaxi.get("position");
+				//System.out.println(thisTaxi);
+				int area = (int) thisTaxi.get("workingArea");
+				if (isPos1InAreaOfPos2(clientPos, pos, area)) {
+					//System.out.println("this taxi is available");
+					ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
+					//on envoie pas le message direct au client
+					content.put("message", NuberHost.NEED_A_TAXI);
+					content.put("id", msg.getSender());
+					try {
+						rep.setContentObject(content);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} 
+					rep.addReceiver((AID) thisTaxi.get("id"));
+		            send(rep);
+				}
+			}
+		}
     }
 	
 	protected boolean isPos1InAreaOfPos2(Position pos1, Position pos2, int area) {

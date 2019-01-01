@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Timer;
+import java.util.TimerTask;
 
 import jade.core.AID;
 import jade.core.behaviours.*;
@@ -50,8 +51,10 @@ public class Taxi extends Agent {
 	private Position currPos;
 	private boolean isAvailable = true;
 	private int workingArea;
+	private HashMap myClient;
 	
 	private Timer movingTimer; //timer avant que le taxi ne bouge dans une nouvelle location
+	private Timer travelTimer;
 
   // Put agent initializations here
 	protected void setup() {	
@@ -87,6 +90,7 @@ public class Taxi extends Agent {
 			content.put("isAvailable", isAvailable);
 			hello.setContentObject(content);
             send( hello );
+            waitingForClient();
 			
             // add a Behaviour to process incoming messages
             addBehaviour( new CyclicBehaviour( this ) {
@@ -100,6 +104,8 @@ public class Taxi extends Agent {
                                         leaveParty();
                                     } else if (NuberHost.I_DONT_CHOOSE_YOU.equals(msg.getContent())) {
 										System.out.println(msg.getSender().getName() + " didn't choose me");
+										if (isAvailable)
+											waitingForClient();
 									} else {
                                     	HashMap content = null;
 										try {
@@ -112,14 +118,69 @@ public class Taxi extends Agent {
 										if (content != null)
 											message = (String) content.get("message");
 										
-                                    	if (NuberHost.NEED_A_TAXI.equals(message)) {   
+                                    	if (NuberHost.NEED_A_TAXI.equals(message)) {
+                                    		if (movingTimer != null) {
+                                    			movingTimer.cancel();
+                                    			movingTimer.purge();
+                                    		}
                                     		imAvailable(content);
     									} else if (NuberHost.I_CHOOSE_YOU.equals(message)) {
     										System.out.println(msg.getSender().getName() + " have choose me");
     										if (isAvailable) {
     											//On accepte la course et on démarre un timer qui correspond au temps de trajet
+    											isAvailable = false;
+    											
+    											myClient = content;
+    											myClient.put("id", msg.getSender());
+    											myClient.remove("message");
+    											
+    											//envoie d'un message au service client pour dire qu'on est plus dispo
+    											ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
+    											System.out.print("( "+ getAID().getName() +" ) I have a client. I'm no longer available.");
+    									        rep.setContent(NuberHost.IM_NOT_AVAILABLE);
+    											rep.addReceiver(new AID("serviceClient", AID.ISLOCALNAME));
+    									        send(rep);
+    											//envoi d'un message au client pour dire qu'on démarre la course
+    									        rep = new ACLMessage( ACLMessage.INFORM );
+    											//System.out.print("( "+ getAID().getName() +" ) I have a client. I'm no longer available.");
+    									        rep.setContent(NuberHost.STARTING_THE_DRIVE);
+    											rep.addReceiver(msg.getSender());
+    									        send(rep);
+    									        
+    									        //démarrer un timer correspondant au temps de trajet
+    									        travelTimer = new Timer();
+    									        travelTimer.schedule(new TimerTask() {
+    												@Override
+    												public void run() {
+    													//on set la nouvelle position du taxi
+    													currPos = (Position) myClient.get("destination");
+    													
+    													//on notifie au client qu'on est arrivé
+    													AID cliId = (AID) myClient.get("id");
+    	    											ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
+    	    											System.out.print("( "+ getAID().getName() +" ) Hey " + cliId + ", we have arrive!");
+    	    									        rep.setContent(NuberHost.END_OF_THE_DRIVE);
+    	    											rep.addReceiver(cliId);
+    	    									        send(rep);
+    													
+    													//on notifie au service client qu'on est dispo mtn
+    	    											rep = new ACLMessage( ACLMessage.INFORM );
+    	    									        rep.setContent(NuberHost.IM_AVAILABLE);
+    	    											rep.addReceiver(cliId);
+    	    									        send(rep);
+    													
+    													//trouver le moyen de démarre le movingTimer
+    													waitingForClient();
+    												}
+    											}, 15 * 1000); //A CHANGER: METTRE LE TEMPS DE TRAJET CALCULER?
     										} else {
     											//on renvoie un message au client que l'on est plus dispo
+    											//PAS FINI
+    											ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
+    											//System.out.print("( "+ getAID().getName() +" ) I have a client. I'm no longer available.");
+    									        rep.setContent(NuberHost.IM_NOT_AVAILABLE);
+    											rep.addReceiver(msg.getSender());
+    									        send(rep);
     										}
     											
     									} else {
@@ -167,9 +228,19 @@ public class Taxi extends Agent {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-        System.out.println("1");
+        //System.out.println("1");
         rep.addReceiver(id);
         send(rep);
+	}
+	
+	private void waitingForClient() { //réinitialise certaines variables
+		movingTimer = new Timer();
+		movingTimer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				currPos = NuberHost.getRandomPosition();
+			}
+		}, 0, MAX_WAIT_BEFORE_MOVING * 1000); 
 	}
 	
     /**

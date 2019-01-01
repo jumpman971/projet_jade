@@ -28,6 +28,7 @@ import jade.core.Agent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -44,10 +45,13 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 public class Client extends Agent {
 	public final static int MAX_WAIT_TIME = 60;
 	public final static int MAX_WAIT_FOR_TAXI = 15;
+	public final static int MIN_TAXI_SCORE = 0;
+	public final static int MAX_TAXI_SCORE = 10;
 
 	private Position currPos;
 	private Position destPos;
-	private HashMap myTaxis;
+	private HashMap myTaxis; //les taxis que l'on a pris
+	private HashMap myTaxi; //le taxi dans lequel on se trouve (ou que l'on sera)
 	
 	private boolean waitingForResponse = false;
 	private boolean waitingForTaxi = false;
@@ -90,6 +94,28 @@ public class Client extends Agent {
                                     if (NuberHost.GOODBYE.equals( msg.getContent() )) {
                                         // time to go
                                         leaveParty();
+                                    } else if (NuberHost.IM_NOT_AVAILABLE.equals(msg.getContent())) { //on avait choisie un taxi mais il est plus dispo
+                                    	if (myTaxi != null && myTaxi.get("id").equals(msg.getSender())) { //on vérifie que celui qui nous rep est bien le taxi qu'on avait choisie (pas sur que ça soit nécessaire)
+                                    		myTaxi = null;
+                                    		//on relance une demande de taxi
+                                    		restartSendingMsg();
+                                    	}
+                                    } else if (NuberHost.END_OF_THE_DRIVE.equals(msg.getContent())) {
+                                    	currPos = destPos;
+                                    	destPos = null;
+                                    	
+                                    	restartSendingMsg();
+                                    } else if (NuberHost.STARTING_THE_DRIVE.equals(msg.getContent())) {
+                                    	//noter ses taxis? et attendre la fin du trajet via un message du taxi
+                                    	if (myTaxis.get(msg.getSender()) == null) {
+                                    		myTaxis.put(msg.getSender(), myTaxi);
+                                    	}
+                                    	//on note tous nos taxi
+                                    	for (Iterator<HashMap> it = myTaxis.values().iterator(); it.hasNext();) {
+                                    		HashMap taxi = it.next();
+                                    		
+                                    		taxi.put("score", (int) (Math.random() * (MAX_TAXI_SCORE - MIN_TAXI_SCORE)));
+                                    	}
                                     } else {
                                     	HashMap content = null;
 										try {
@@ -206,7 +232,10 @@ public class Client extends Agent {
 					if (choosenTaxi == null) {//si aucun taxi n'a pu être choisi???
 					
 					}
-					//on envoi un message pour confirmer le choix de taxi mais on attend que le service client nous confirme que c'est bon
+					
+					myTaxi = choosenTaxi;
+					
+					//on envoi un message pour confirmer le choix de taxi mais on attend que le taxi nous confirme que c'est bon
 					ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
 					HashMap content = new HashMap();
 					content.put("message", NuberHost.I_CHOOSE_YOU);
@@ -221,7 +250,7 @@ public class Client extends Agent {
 		            rep.addReceiver((AID) choosenTaxi.get("id"));
 		            send(rep);
 		            
-		            //on envoie des messages au autre taxi pour leur dire qu'on les as pas choisies
+		            //on envoie des messages au autres taxi pour leur dire qu'on les as pas choisies
 		            for (int i = 0; i < tmpTaxi.size(); ++i) {
 		            	rep = new ACLMessage( ACLMessage.INFORM );
 			            rep.setContent(NuberHost.I_DONT_CHOOSE_YOU);
@@ -247,6 +276,14 @@ public class Client extends Agent {
 		tmpTaxi.add(tmp);
 		//System.out.println(tmp);
 		//System.out.println("test3");
+	}
+	
+	private void restartSendingMsg() {
+		waitingForResponse = false;
+		waitingForTaxi = true;
+		timer.cancel();
+		timer.purge();
+		timer = null;
 	}
 	
     /**
