@@ -106,7 +106,8 @@ public class Client extends Agent {
                                     } else if (NuberHost.END_OF_THE_DRIVE.equals(msg.getContent())) {
                                     	currPos = destPos;
                                     	destPos = null;
-                                    	
+                                    	System.out.println("( "+ getAID().getName() +" ) Hey " + msg.getSender().getName() + ", thanks for the travel!");
+                                    	System.out.println(myTaxis);
                                     	restartSendingMsg();
                                     } else if (NuberHost.STARTING_THE_DRIVE.equals(msg.getContent())) {
                                     	//noter ses taxis? et attendre la fin du trajet via un message du taxi
@@ -143,6 +144,13 @@ public class Client extends Agent {
                                     		chooseATaxi(content);
     									} else {
     										System.out.println( "Client received unexpected message: " + msg );
+    										System.out.println(msg.getContent());
+    										try {
+												System.out.println(msg.getContentObject());
+											} catch (UnreadableException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
     									}
                                     }
                                 } else {
@@ -302,7 +310,7 @@ public class Client extends Agent {
 	
 	private void restartSendingMsg() {
 		waitingForResponse = false;
-		waitingForTaxi = true;
+		waitingForTaxi = false;
 		timer.cancel();
 		timer.purge();
 		timer = null;

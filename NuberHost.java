@@ -112,6 +112,7 @@ public class NuberHost
     public final static String REGISTER_TAXI = "REGISTER TAXI";
     public final static String IM_AVAILABLE = "HEY I'M AVAILABLE";
     public final static String IM_NOT_AVAILABLE = "HEY SORRY I'M NOT AVAILABLE";
+    public final static String I_HAVE_MOVE = "I'VE MOVE FROM PREVIOUS POSITION";
     //public final static String I_HAVE_A_CLIENT = "I HAVE A CLIENT";
     public final static String STARTING_THE_DRIVE = "STARTING THE DRIVE";
     public final static String END_OF_THE_DRIVE = "END OF THE DRIVE";

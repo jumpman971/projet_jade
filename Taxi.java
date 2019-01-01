@@ -136,7 +136,7 @@ public class Taxi extends Agent {
     											
     											//envoie d'un message au service client pour dire qu'on est plus dispo
     											ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
-    											System.out.print("( "+ getAID().getName() +" ) I have a client. I'm no longer available.");
+    											System.out.println("( "+ getAID().getName() +" ) I have a client. I'm no longer available.");
     									        rep.setContent(NuberHost.IM_NOT_AVAILABLE);
     											rep.addReceiver(new AID("serviceClient", AID.ISLOCALNAME));
     									        send(rep);
@@ -153,17 +153,21 @@ public class Taxi extends Agent {
     												@Override
     												public void run() {
     													//on set la nouvelle position du taxi
+    													Position oldPos = currPos;
     													currPos = (Position) myClient.get("destination");
     													
     													//on notifie au client qu'on est arrivé
     													AID cliId = (AID) myClient.get("id");
     	    											ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
-    	    											System.out.print("( "+ getAID().getName() +" ) Hey " + cliId.getName() + ", we have arrive!");
+    	    											System.out.println("( "+ getAID().getName() +" ) Hey " + cliId.getName() + ", we have arrive!");
     	    									        rep.setContent(NuberHost.END_OF_THE_DRIVE);
     	    											rep.addReceiver(cliId);
     	    									        send(rep);
+    	    									        
+    	    									        sendMovePositionMsg(oldPos);
     													
     													//on notifie au service client qu'on est dispo mtn
+    	    									        isAvailable = true;
     	    											rep = new ACLMessage( ACLMessage.INFORM );
     	    									        rep.setContent(NuberHost.IM_AVAILABLE);
     	    											rep.addReceiver(new AID("serviceClient", AID.ISLOCALNAME));
@@ -214,10 +218,10 @@ public class Taxi extends Agent {
 		HashMap repContent = new HashMap();
 		AID id = (AID) content.get("id");
 		if (isAvailable) {
-			System.out.print("( "+ getAID().getName() +" ) Hey " + id.getName() + ", i'm available!");
+			System.out.println("( "+ getAID().getName() +" ) Hey " + id.getName() + ", i'm available!");
 			repContent.put("message", NuberHost.IM_AVAILABLE);
 		} else {
-			System.out.print("( "+ getAID().getName() +" ) Hey " + id.getName() + ", i'm not available!");
+			System.out.println("( "+ getAID().getName() +" ) Hey " + id.getName() + ", i'm not available!");
 			repContent.put("message", NuberHost.IM_NOT_AVAILABLE);
 		}
 		repContent.put("id", getAID());
@@ -237,9 +241,29 @@ public class Taxi extends Agent {
 		movingTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
+				Position oldPos = currPos;
 				currPos = NuberHost.getRandomPosition();
+				
+				sendMovePositionMsg(oldPos);
 			}
-		}, 0, MAX_WAIT_BEFORE_MOVING * 1000); 
+		}, MAX_WAIT_BEFORE_MOVING * 1000, MAX_WAIT_BEFORE_MOVING * 1000); 
+	}
+	
+	private void sendMovePositionMsg(Position oldPos) {
+		ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
+		System.out.println("( "+ getAID().getName() +" ) I have move from " + oldPos + " to " + currPos);
+		HashMap repContent = new HashMap();
+		repContent.put("message", NuberHost.I_HAVE_MOVE);
+		repContent.put("position", currPos);
+        try {
+			rep.setContentObject(repContent);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+        //System.out.println("1");
+        rep.addReceiver(new AID("serviceClient", AID.ISLOCALNAME));
+        send(rep);
 	}
 	
     /**

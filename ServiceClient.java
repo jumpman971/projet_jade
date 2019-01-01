@@ -100,6 +100,8 @@ public class ServiceClient extends Agent {
     										
     									} else if (NuberHost.NEED_A_TAXI.equals(message)) {
     										aClientNeedATaxi(msg, content);
+    									} else if (NuberHost.I_HAVE_MOVE.equals(message)) {
+    										((HashMap) listTaxi.get(msg.getSender())).put("position", content.get("position"));
     									} else {
 	                                    	System.out.println( "ServiceClient received unexpected message: " + msg );
 	                                    	try {
