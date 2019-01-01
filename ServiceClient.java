@@ -75,6 +75,8 @@ public class ServiceClient extends Agent {
                                     if (NuberHost.GOODBYE.equals( msg.getContent() )) {
                                         // time to go
                                         leaveParty();
+                                    } else if (NuberHost.IM_AVAILABLE.equals(msg.getContent())) { 
+                                    	((HashMap) listTaxi.get(msg.getSender())).put("isAvailable", true); 
                                     } else if (NuberHost.IM_NOT_AVAILABLE.equals(msg.getContent())) { 
                                     	((HashMap) listTaxi.get(msg.getSender())).put("isAvailable", false);
                                 	} else { //possible message with object content (cant use setcontent and setcontentobject in the same time

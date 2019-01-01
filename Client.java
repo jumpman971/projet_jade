@@ -53,6 +53,7 @@ public class Client extends Agent {
 	private HashMap myTaxis; //les taxis que l'on a pris
 	private HashMap myTaxi; //le taxi dans lequel on se trouve (ou que l'on sera)
 	
+	private int waitTime;
 	private boolean waitingForResponse = false;
 	private boolean waitingForTaxi = false;
 	private Timer timer;
@@ -82,6 +83,8 @@ public class Client extends Agent {
             myTaxis = new HashMap();
             currPos = NuberHost.getRandomPosition();
             timer = null;
+            waitTime = (int) (Math.random() * (MAX_WAIT_TIME - 1));
+			waitTime *= 1000;
 			
             // add a Behaviour to process incoming messages
             addBehaviour( new CyclicBehaviour( this ) {
@@ -153,20 +156,22 @@ public class Client extends Agent {
             addBehaviour( new CyclicBehaviour( this ) {
                             public void action() {
 								if (waitingForResponse || waitingForTaxi)
-									block();
+									//block();
+									return;
 								
+								//System.out.println("test");
 								int waitTime = (int) (Math.random() * (MAX_WAIT_TIME - 1));
 								waitTime *= 1000;
-								
+								//System.out.println("test2");
 								try {
 									Thread.sleep(waitTime);
+									//System.out.println("test3");
 								} catch(InterruptedException ex) {
 									Thread.currentThread().interrupt();
 								}
-								
+								waitingForResponse = true;
 								iNeedATaxi();
 								
-								waitingForResponse = true;
 								timer = new Timer();
 								timer.schedule(new TimerTask() {
 									@Override
@@ -177,6 +182,23 @@ public class Client extends Agent {
 								}, MAX_WAIT_FOR_TAXI * 1000);
                             }
                         } );
+            /*addBehaviour(new TickerBehaviour(this, waitTime) {
+                protected void onTick() {
+                	if (waitingForResponse || waitingForTaxi)
+						block();
+					waitingForResponse = true;
+					iNeedATaxi();
+					
+					timer = new Timer();
+					timer.schedule(new TimerTask() {
+						@Override
+						public void run() {
+							waitingForResponse = false;
+							waitingForTaxi = false;
+						}
+					}, MAX_WAIT_FOR_TAXI * 1000);
+                } 
+              });*/
         }
         catch (Exception e) {
             System.out.println( "Saw exception in TaxiAgent: " + e );

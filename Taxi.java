@@ -158,7 +158,7 @@ public class Taxi extends Agent {
     													//on notifie au client qu'on est arrivé
     													AID cliId = (AID) myClient.get("id");
     	    											ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
-    	    											System.out.print("( "+ getAID().getName() +" ) Hey " + cliId + ", we have arrive!");
+    	    											System.out.print("( "+ getAID().getName() +" ) Hey " + cliId.getName() + ", we have arrive!");
     	    									        rep.setContent(NuberHost.END_OF_THE_DRIVE);
     	    											rep.addReceiver(cliId);
     	    									        send(rep);
@@ -166,7 +166,7 @@ public class Taxi extends Agent {
     													//on notifie au service client qu'on est dispo mtn
     	    											rep = new ACLMessage( ACLMessage.INFORM );
     	    									        rep.setContent(NuberHost.IM_AVAILABLE);
-    	    											rep.addReceiver(cliId);
+    	    											rep.addReceiver(new AID("serviceClient", AID.ISLOCALNAME));
     	    									        send(rep);
     													
     													//trouver le moyen de démarre le movingTimer
@@ -213,12 +213,11 @@ public class Taxi extends Agent {
 		ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
 		HashMap repContent = new HashMap();
 		AID id = (AID) content.get("id");
-		System.out.print("( "+ getAID().getName() +" ) Hey " + id.getName() + ", ");
 		if (isAvailable) {
-			System.out.println("i'm available!");
+			System.out.print("( "+ getAID().getName() +" ) Hey " + id.getName() + ", i'm available!");
 			repContent.put("message", NuberHost.IM_AVAILABLE);
 		} else {
-			System.out.println("i'm not available!");
+			System.out.print("( "+ getAID().getName() +" ) Hey " + id.getName() + ", i'm not available!");
 			repContent.put("message", NuberHost.IM_NOT_AVAILABLE);
 		}
 		repContent.put("id", getAID());
