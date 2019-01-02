@@ -107,7 +107,7 @@ public class Client extends Agent {
                                     	currPos = destPos;
                                     	destPos = null;
                                     	System.out.println("( "+ getAID().getName() +" ) Hey " + msg.getSender().getName() + ", thanks for the travel!");
-                                    	System.out.println(myTaxis);
+                                    	//System.out.println(myTaxis);
                                     	restartSendingMsg();
                                     } else if (NuberHost.STARTING_THE_DRIVE.equals(msg.getContent())) {
                                     	//noter ses taxis? et attendre la fin du trajet via un message du taxi
@@ -256,11 +256,18 @@ public class Client extends Agent {
 						choosenTaxi = tmpTaxi.get(index);
 						tmpTaxi.remove(index);
 					} else { //on choisi le taxi qui a le plus de score parmi la liste
-						
+						HashMap highest = tmpTaxi.get(0);
+						for (int i = 1; i < tmpTaxi.size(); ++i) {
+							HashMap thisTaxi = tmpTaxi.get(i);
+							if (((int) thisTaxi.get("score")) > ((int) highest.get("score")))
+								highest = thisTaxi;
+						}
+						choosenTaxi = highest;
 					}
 					
 					if (choosenTaxi == null) {//si aucun taxi n'a pu être choisi???
-					
+						restartSendingMsg();
+						return;
 					}
 					
 					myTaxi = choosenTaxi;
@@ -287,6 +294,8 @@ public class Client extends Agent {
 			            rep.addReceiver((AID) ((HashMap) tmpTaxi.get(i)).get("id"));
 			            send(rep);
 		            }
+		            
+		            oneTaxiIsInMyList = false;
 				}
 			}, MAX_WAIT_FOR_TAXI * 1000);
 			
@@ -299,7 +308,7 @@ public class Client extends Agent {
 		if (tmp == null) {
 			tmp = new HashMap();
 			tmp.put("id", taxiId);
-			tmp.put("score", null);
+			tmp.put("score", 0);
 		} else
 			oneTaxiIsInMyList = true; //ne pas oublié de réinit la var au bon moment
 			

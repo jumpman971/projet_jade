@@ -94,7 +94,7 @@ public class ServiceClient extends Agent {
                                     	if (NuberHost.REGISTER_TAXI.equals(message)) {    
                                     		content.remove("message");
     										listTaxi.put(msg.getSender(), content);
-    										System.out.println("New taxi registred in serviceClient!"
+    										System.out.println("(ServiceClient) New taxi registred in serviceClient!"
     												+ "(" + msg.getSender().getName() + ")");
     												//+ "(" + content + ")");
     										
@@ -147,7 +147,7 @@ public class ServiceClient extends Agent {
     }
     
     private void aClientNeedATaxi(ACLMessage msg, HashMap content) {
-    	System.out.println("Someone need a taxi...");
+    	System.out.println("(ServiceClient) Someone need a taxi...");
 		
 		Position clientPos = (Position) content.get("position");
 		Position clientDestPos = (Position) content.get("destination"); 

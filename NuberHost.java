@@ -303,6 +303,15 @@ public class NuberHost
     protected static Position getRandomPosition() {
 		return new Position(Math.random() * NuberHost.MAX_X_MAP_AREA, Math.random() * NuberHost.MAX_Y_MAP_AREA);
     }
+    
+    protected static int calculateTravelDuration(Position from, Position to) {
+		int duration = 0;
+		double distance = Math.sqrt( Math.pow(to.getX() - from.getX(), 2) + Math.pow(to.getY() - from.getY(), 2));
+		
+		//(distance_à_parcourir * tempsUnitaire)/distanceUnitaire;
+		duration = (int) ((distance * 1)/ 10);
+		return duration;
+	}
 
 	/**
      * End the party: set the state variables, and tell all the guests to leave.
