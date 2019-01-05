@@ -44,17 +44,17 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 public class Taxi extends Agent {
 	public final static int MIN_WORKING_DISTANCE = 10;
 	public final static int MAX_WORKING_DISTANCE = 50;
-	public final static int MAX_WAIT_BEFORE_MOVING = 20;
+	public final static int MAX_WAIT_BEFORE_MOVING = 20; //temps d'attente max avant que le taxi ne bouge vers une autre position
 	
 	/*private int posX;
 	private int posY;*/
-	private Position currPos;
-	private boolean isAvailable = true;
-	private int workingArea;
-	private HashMap myClient;
+	private Position currPos; //position actuel du taxi
+	private boolean isAvailable = true; //est disponible ou occupé (avec un client)
+	private int workingArea;	//correspond à la zone de couverture où le taxi peut accepter des clients (en fonction de sa position)
+	private HashMap myClient;	//le client que le taxi transporte actuellement
 	
 	private Timer movingTimer; //timer avant que le taxi ne bouge dans une nouvelle location
-	private Timer travelTimer;
+	private Timer travelTimer;	//timer du temps de trajet avec un client
 
   // Put agent initializations here
 	protected void setup() {	
@@ -102,7 +102,7 @@ public class Taxi extends Agent {
                                     if (NuberHost.GOODBYE.equals(msg.getContent())) {
                                         // time to go
                                         leaveParty();
-                                    } else if (NuberHost.I_DONT_CHOOSE_YOU.equals(msg.getContent())) {
+                                    } else if (NuberHost.I_DONT_CHOOSE_YOU.equals(msg.getContent())) {	//un client ne nous a pas choisie pour un trajet
 										System.out.println(msg.getSender().getName() + " didn't choose me");
 										if (isAvailable)
 											waitingForClient();
@@ -118,13 +118,13 @@ public class Taxi extends Agent {
 										if (content != null)
 											message = (String) content.get("message");
 										
-                                    	if (NuberHost.NEED_A_TAXI.equals(message)) {
-                                    		if (movingTimer != null) {
+                                    	if (NuberHost.NEED_A_TAXI.equals(message)) {	//un client a besoin d'un taxi
+                                    		if (movingTimer != null) { //on ne bouge pas temps qu'on sait pas si le client nous accepte ou non pour le trajet
                                     			movingTimer.cancel();
                                     			movingTimer.purge();
                                     		}
                                     		imAvailable(content);
-    									} else if (NuberHost.I_CHOOSE_YOU.equals(message)) {
+    									} else if (NuberHost.I_CHOOSE_YOU.equals(message)) { //le client nous a choisie pour le trajet
     										iChooseYou(msg, content);
     									} else {
     										System.out.println( "Taxi received unexpected message: " + msg );
@@ -152,6 +152,7 @@ public class Taxi extends Agent {
 	// Internal implementation methods
     //////////////////////////////////s
 	
+	//on envoie un messageau client pour lui dire qu'on est disponible
 	private void imAvailable(HashMap content) {
 		ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
 		HashMap repContent = new HashMap();
@@ -175,7 +176,7 @@ public class Taxi extends Agent {
         send(rep);
 	}
 	
-	private void waitingForClient() { //réinitialise certaines variables
+	private void waitingForClient() { //réinitialise certaines variables et bouge la position du taxi si on ne trouve pas de client
 		movingTimer = new Timer();
 		movingTimer.schedule(new TimerTask() {
 			@Override
@@ -188,6 +189,7 @@ public class Taxi extends Agent {
 		}, MAX_WAIT_BEFORE_MOVING * 1000, MAX_WAIT_BEFORE_MOVING * 1000); 
 	}
 	
+	//signale au service client que l'on a bougé
 	private void sendMovePositionMsg(Position oldPos) {
 		ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
 		System.out.println("( "+ getAID().getName() +" ) I have move from " + oldPos + " to " + currPos);
@@ -204,6 +206,7 @@ public class Taxi extends Agent {
         rep.addReceiver(new AID("serviceClient", AID.ISLOCALNAME));
         send(rep);
 	}
+	
 	
 	private void iChooseYou(ACLMessage msg, HashMap content) {
 		System.out.println(msg.getSender().getName() + " have choose me");
@@ -261,7 +264,6 @@ public class Taxi extends Agent {
 	        }, NuberHost.calculateTravelDuration((Position) myClient.get("position"), (Position) myClient.get("destination")) * 1000);
 		} else {
 			//on renvoie un message au client que l'on est plus dispo
-			//PAS FINI
 			ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
 			//System.out.print("( "+ getAID().getName() +" ) I have a client. I'm no longer available.");
 	        rep.setContent(NuberHost.IM_NOT_AVAILABLE);

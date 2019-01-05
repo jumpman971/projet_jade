@@ -75,10 +75,10 @@ public class ServiceClient extends Agent {
                                     if (NuberHost.GOODBYE.equals( msg.getContent() )) {
                                         // time to go
                                         leaveParty();
-                                    } else if (NuberHost.IM_AVAILABLE.equals(msg.getContent())) { 
+                                    } else if (NuberHost.IM_AVAILABLE.equals(msg.getContent())) { //un taxi est à nouveau disponible
                                     	((HashMap) listTaxi.get(msg.getSender())).put("isAvailable", true); 
                                     } else if (NuberHost.IM_NOT_AVAILABLE.equals(msg.getContent())) { 
-                                    	((HashMap) listTaxi.get(msg.getSender())).put("isAvailable", false);
+                                    	((HashMap) listTaxi.get(msg.getSender())).put("isAvailable", false);	//un taxi n'est plus disponible
                                 	} else { //possible message with object content (cant use setcontent and setcontentobject in the same time
                                     	HashMap content = null;
 										try {
@@ -91,16 +91,16 @@ public class ServiceClient extends Agent {
 										if (content != null)
 											message = (String) content.get("message");
 										
-                                    	if (NuberHost.REGISTER_TAXI.equals(message)) {    
+                                    	if (NuberHost.REGISTER_TAXI.equals(message)) { //un nouveau taxi est arrivé
                                     		content.remove("message");
     										listTaxi.put(msg.getSender(), content);
     										System.out.println("(ServiceClient) New taxi registred in serviceClient!"
     												+ "(" + msg.getSender().getName() + ")");
     												//+ "(" + content + ")");
     										
-    									} else if (NuberHost.NEED_A_TAXI.equals(message)) {
+    									} else if (NuberHost.NEED_A_TAXI.equals(message)) { //un client demande un taxi
     										aClientNeedATaxi(msg, content);
-    									} else if (NuberHost.I_HAVE_MOVE.equals(message)) {
+    									} else if (NuberHost.I_HAVE_MOVE.equals(message)) { //un taxi a bougé de ça position précédente
     										((HashMap) listTaxi.get(msg.getSender())).put("position", content.get("position"));
     									} else {
 	                                    	System.out.println( "ServiceClient received unexpected message: " + msg );
@@ -159,7 +159,7 @@ public class ServiceClient extends Agent {
 				Position pos = (Position) thisTaxi.get("position");
 				//System.out.println(thisTaxi);
 				int area = (int) thisTaxi.get("workingArea");
-				if (isPos1InAreaOfPos2(clientPos, pos, area)) {
+				if (isPos1InAreaOfPos2(clientPos, pos, area)) { //si la position du client est dans la zone de travail du taxi
 					//System.out.println("this taxi is available");
 					ACLMessage rep = new ACLMessage( ACLMessage.INFORM );
 					//on envoie pas le message direct au client
@@ -178,6 +178,8 @@ public class ServiceClient extends Agent {
 		}
     }
 	
+    
+    //vérifie qu'une position pos1 se situe dans un cercle de rayon "area" et dont le centre est en position pos2
 	protected boolean isPos1InAreaOfPos2(Position pos1, Position pos2, int area) {
 		double calc1 = Math.pow((pos1.getX() - pos2.getX()), 2);
 		double calc2 = Math.pow((pos1.getY() - pos2.getY()), 2);

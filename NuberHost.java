@@ -122,6 +122,7 @@ public class NuberHost
 	
 	public final static String GOODBYE = "GOODBYE";
 	
+	//taille de la "carte"
 	public final static int MAX_X_MAP_AREA = 80;
 	public final static int MAX_Y_MAP_AREA = 80;
 
